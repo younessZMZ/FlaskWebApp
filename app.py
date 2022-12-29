@@ -1,5 +1,5 @@
 from markupsafe import escape
-from flask import Flask
+from flask import Flask, abort
 
 app = Flask(__name__)
 
@@ -28,4 +28,7 @@ def add(n1, n2):
 @app.route('/users/<int:user_id>/')
 def greet_user(user_id):
     users = ['Bob', 'Jane', 'Adam']
-    return '<h2>Hi {}</h2>'.format(users[user_id])
+    try:
+        return '<h2>Hi {}</h2>'.format(users[user_id])
+    except IndexError:
+        abort(404)
