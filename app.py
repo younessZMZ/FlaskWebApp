@@ -1,4 +1,4 @@
-from datetime import datetime
+import sqlite3
 
 from markupsafe import escape
 from flask import Flask, abort, render_template, request, url_for, flash, redirect
@@ -126,3 +126,37 @@ def form():
 @app.route('/courses/')
 def courses():
     return render_template('courses.html', courses_list=courses_list)
+
+
+# connecting and inserting data to sqlite database
+def get_db_connection():
+    conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+@app.route('/sqlite')
+def index():
+    conn = get_db_connection()
+    posts = conn.execute('SELECT * FROM posts').fetchall()
+    conn.close()
+    return render_template('sqlite_index.html', posts=posts)
+
+
+@app.route('/sql_create/', methods=('GET', 'POST'))
+def sql_create():
+    if request.method == "POST":
+        title = request.form["title"]
+        content = request.form["content"]
+
+        if not title:
+            flash("Title is required!")
+        elif not content:
+            flash("Content is required!")
+        else:
+            conn = get_db_connection()
+            conn.execute("INSERT INTO posts (title, content) VALUES (?, ?)", (title, content))
+            conn.commit()
+            conn.close()
+            return redirect(url_for("index"))
+    return render_template('sql_create.html')
