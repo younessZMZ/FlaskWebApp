@@ -1,9 +1,10 @@
 from datetime import datetime
 
 from markupsafe import escape
-from flask import Flask, abort, render_template
+from flask import Flask, abort, render_template, request, url_for, flash, redirect
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = '3dba5e7ffcad79a69098833e0448bab8970b80f7bf10f5fd'
 
 
 @app.errorhandler(404)
@@ -21,9 +22,16 @@ def error500():
     abort(500)
 
 
+messages = [{'title': 'Message One',
+             'content': 'Message One Content'},
+            {'title': 'Message Two',
+             'content': 'Message Two Content'}
+            ]
+
+
 @app.route('/')
 def hello():
-    return render_template('index.html', utc_dt=datetime.utcnow())
+    return render_template('index.html', messages=messages)
 
 
 @app.route('/about/')
@@ -71,3 +79,20 @@ def greet_user(user_id):
         return '<h2>Hi {}</h2>'.format(users[user_id])
     except IndexError:
         abort(404)
+
+
+# setting up forms
+@app.route('/create/', methods=('GET', 'POST'))
+def create():
+    if request.method == 'POST':
+        title = request.form['title']
+        content = request.form['content']
+
+        if not title:
+            flash('Title is required!')
+        elif not content:
+            flash('Content is required!')
+        else:
+            messages.append({'title': title, 'content': content})
+            return redirect(url_for('hello'))
+    return render_template('create.html')

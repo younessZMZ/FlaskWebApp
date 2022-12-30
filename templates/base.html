@@ -9,6 +9,26 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
 
     <title>{% block title %} {% endblock %} - FlaskApp</title>
+      <style>
+        .message {
+            padding: 10px;
+            margin: 5px;
+            background-color: #f3f3f3
+        }
+        nav a {
+            color: #d64161;
+            font-size: 3em;
+            margin-left: 50px;
+            text-decoration: none;
+        }
+
+        .alert {
+            padding: 20px;
+            margin: 5px;
+            color: #970020;
+            background-color: #ffd5de;
+        }
+      </style>
   </head>
   <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -23,6 +43,9 @@
               <a class="nav-link" href="{{ url_for('comments') }}">Comments</a>
             </li>
             <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('create') }}">Create</a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" href="{{ url_for('about') }}">About</a>
             </li>
         </ul>
@@ -30,6 +53,9 @@
     </div>
     </nav>
     <div class="container">
+        {% for message in get_flashed_messages() %}
+            <div class="alert">{{ message }}</div>
+        {% endfor %}
         {% block content %} {% endblock %}
     </div>
 
