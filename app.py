@@ -1,8 +1,11 @@
+__author__ = "yzemzgui"
+
 import sqlite3
 
-from markupsafe import escape
-from flask import Flask, abort, render_template, request, url_for, flash, redirect
+from flask import (Flask, abort, flash, redirect, render_template, request,
+                   url_for)
 from forms import CourseForm
+from markupsafe import escape
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "3dba5e7ffcad79a69098833e0448bab8970b80f7bf10f5fd"
@@ -10,12 +13,12 @@ app.config["SECRET_KEY"] = "3dba5e7ffcad79a69098833e0448bab8970b80f7bf10f5fd"
 
 @app.errorhandler(404)
 def page_not_found(error):
-    return render_template("404.html"), 404
+    return render_template("404.html"), error.code
 
 
 @app.errorhandler(500)
 def internal_error(error):
-    return render_template("500.html"), 500
+    return render_template("500.html"), error.code
 
 
 @app.route("/500")
@@ -101,7 +104,13 @@ def create():
 
 # adding forms with WTF-Forms
 courses_list = [
-    {"title": "Python 101", "description": "Learn Python basics", "price": 34, "available": True, "level": "Beginner"}
+    {
+        "title": "Python 101",
+        "description": "Learn Python basics",
+        "price": 34,
+        "available": True,
+        "level": "Beginner",
+    }
 ]
 
 
@@ -134,6 +143,15 @@ def get_db_connection():
     return conn
 
 
+def get_post(post_id):
+    conn = get_db_connection()
+    post = conn.execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
+    conn.close()
+    if post is None:
+        abort(404)
+    return post
+
+
 @app.route("/sqlite")
 def index():
     conn = get_db_connection()
@@ -159,3 +177,45 @@ def sql_create():
             conn.close()
             return redirect(url_for("index"))
     return render_template("sql_create.html")
+
+
+@app.route("/<int:id_>/edit/", methods=("GET", "POST"))
+def edit(id_):
+    post = get_post(id_)
+
+    if request.method == "POST":
+        title = request.form["title"]
+        content = request.form["content"]
+
+        if not title:
+            flash("Title is required!")
+
+        elif not content:
+            flash("Content is required!")
+
+        else:
+            conn = get_db_connection()
+            conn.execute(
+                "UPDATE posts SET title = ?, content = ? WHERE id = ?",
+                (title, content, id_),
+            )
+            conn.commit()
+            conn.close()
+            return redirect(url_for("index"))
+
+    return render_template("edit.html", post=post)
+
+
+@app.route("/<int:id_>/delete/", methods=("POST",))
+def delete(id_):
+    post = get_post(id_)
+    conn = get_db_connection()
+    conn.execute("DELETE FROM posts WHERE id = ?", (id_,))
+    conn.commit()
+    conn.close()
+    flash('"{}" was successfully deleted!'.format(post["title"]))
+    return redirect(url_for("index"))
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
